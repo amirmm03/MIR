@@ -360,6 +360,7 @@ class IMDbCrawler:
         try:
             return soup.find('span',{"data-testid": "plot-l"}).get_text()
         except:
+            return ''
             print("failed to get first page summary")
 
     def get_director(self, soup):
@@ -407,6 +408,7 @@ class IMDbCrawler:
             all = all.parent.parent.find_all('a',{'class':"ipc-metadata-list-item__list-content-item ipc-metadata-list-item__list-content-item--link"})
             return [i.get_text() for i in all]
         except:
+            return []
             print("failed to get stars")
 
     def get_writers(self, soup):
@@ -452,6 +454,7 @@ class IMDbCrawler:
             all = all.find_all('a',{'class': "ipc-poster-card__title ipc-poster-card__title--clamp-2 ipc-poster-card__title--clickable"})
             return ['https://www.imdb.com/'+i['href'] for i in all]
         except Exception as e:
+            return []
             print("failed to get related links",e)
 
     def get_summary(self, soup):
