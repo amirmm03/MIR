@@ -24,7 +24,19 @@ class Evaluation:
         """
         precision = 0.0
 
-        # TODO: Calculate precision here
+        
+        tp = 0
+        fp = 0
+
+        for strs in predicted:
+            for ans in strs:
+                if i in actual:
+                    tp += 1
+                else:
+                    fp += 1
+
+    
+        precision = tp / (tp + fp)
         
         return precision
     

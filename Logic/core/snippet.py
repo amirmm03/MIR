@@ -10,6 +10,12 @@ class Snippet:
         """
         self.number_of_words_on_each_side = number_of_words_on_each_side
 
+        path = './Logic/core/stopwords.txt'
+        with open(path, "r") as file:
+            self.stopwords = file.readlines()
+        for i in range(len(self.stopwords)):
+            self.stopwords[i] = self.stopwords[i].strip()
+
     def remove_stop_words_from_query(self, query):
         """
         Remove stop words from the input string.
@@ -25,9 +31,10 @@ class Snippet:
             The query without stop words.
         """
 
-        # TODO: remove stop words from the query.
-
-        return
+        for stopword in self.stopwords:
+            query = query.replace(stopword,'')
+        query = query.replace('  ',' ')
+        return query
 
     def find_snippet(self, doc, query):
         """
@@ -52,5 +59,67 @@ class Snippet:
         not_exist_words = []
 
         # TODO: Extract snippet and the tokens which are not present in the doc.
+        query = self.remove_stop_words_from_query(query)
+        query_tokens = query.split()
+        left_query_tokens = list(set(query.split()))
+        doc_tokens = doc.split()
+        best_windows = []
+        best_windows_start = []
 
+        while len(left_query_tokens)>0:
+            token = left_query_tokens.pop()
+
+            if token in doc_tokens:
+                indices = [i for i, x in enumerate(doc_tokens) if x == token]
+                best_window = None
+                best_count = 0
+                best_start = 0
+                for index in indices:
+                    start = max(0, index - self.number_of_words_on_each_side)
+                    end = min(len(doc_tokens), index + self.number_of_words_on_each_side + 1)
+                    window = doc_tokens[start:end]
+                    count = sum([window.count(qt) for qt in query_tokens])
+                    if count > best_count:
+                        best_window = window
+                        best_count = count
+                        best_start = start
+                best_window = self.bold_query_tokens(best_window, query_tokens, left_query_tokens)
+
+                best_windows.append(best_window)
+                best_windows_start.append(best_start)
+
+                
+            else:
+                not_exist_words.append(token)
+
+        final_snippet = self.create_final_snippet(best_windows,best_windows_start)
+        
+        
         return final_snippet, not_exist_words
+    
+    def bold_query_tokens(self, best_window, query_tokens, left_query_tokens):
+        ans = []
+        
+        for token in best_window:
+            if token not in query_tokens:
+                ans.append(token)
+            else:
+                if token in left_query_tokens:
+                    left_query_tokens.remove(token)
+                ans.append('***' + token + '***')
+        # print(left_query_tokens)
+        return ans
+    
+    def create_final_snippet(self,best_windows,best_windows_start):
+        # print(best_windows_start)
+        best_windows = [x for _, x in sorted(zip(best_windows_start, best_windows))]
+        best_windows_start.sort()
+        ans = ''
+        for window in best_windows:
+            ans +=  ' '.join(window) + '...'
+        ans= ans[:-3]
+        return ans
+    
+if __name__ == '__main__':
+    a = Snippet()
+    print(a.find_snippet('i am ready ready ready to find it in the best possible way of doing that is for my father mothar ready and daughter in the woods ready','ready mothar'))

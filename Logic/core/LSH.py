@@ -34,7 +34,13 @@ class MinHashLSH:
         set
             A set of shingles.
         """
-        shingles = None
+        shingles = set()
+
+        words = document.split()
+        for i in range(len(words) - k + 1):
+            shingle = ' '.join(words[i:i+k])
+            shingles.add(shingle)
+
         return shingles
 
     def build_characteristic_matrix(self):
@@ -46,8 +52,23 @@ class MinHashLSH:
         numpy.ndarray
             The binary characteristic matrix.
         """
-        # TODO
-        return
+        
+        k = 2
+        all_shingles = set()
+        for document in self.documents:
+            shingles = self.shingle_document(document, k)
+            all_shingles.update(shingles)
+        
+        char_matrix = np.zeros((len(all_shingles), len(self.documents)), dtype=int)
+        all_shingles = list(all_shingles)
+        for j, document in enumerate(self.documents):
+            shingles = self.shingle_document(document, k)
+            for shingle in shingles:
+                i = all_shingles.index(shingle)
+                char_matrix[i][j] = 1
+
+
+        return char_matrix
 
     def min_hash_signature(self):
         """
@@ -58,8 +79,26 @@ class MinHashLSH:
         numpy.ndarray
             The Min-Hash signatures matrix.
         """
-        # TODO
-        return
+        
+        char_matrix = self.build_characteristic_matrix()
+        # print('befpar')
+        permutaions = [np.random.permutation(len(char_matrix)) for _ in range(self.num_hashes)]
+        # print('aftpar')
+
+
+
+        signatures = np.full((self.num_hashes, len(self.documents)), np.inf)
+
+        for i in range(len(char_matrix)):
+            for j in range(len(char_matrix[0])):
+                if char_matrix[i, j] == 1:
+                    for k in range(self.num_hashes):
+                        hash_value = permutaions[k][i]
+                        if hash_value < signatures[k, j]:
+                            signatures[k, j] = hash_value
+
+        return signatures
+
 
     def lsh_buckets(self, signature, bands=10, rows_per_band=10):
         """
@@ -79,8 +118,19 @@ class MinHashLSH:
         dict
             A dictionary mapping bucket IDs to lists of document indices.
         """
-        # TODO
-        return
+
+        ans = {}
+        for b in range(bands):
+            for j in range(len(self.documents)):
+                
+                band = signature[b*rows_per_band:(b+1)*rows_per_band, j]
+                hash_value = hash(tuple(band))
+
+                
+                if hash_value not in ans:
+                    ans[hash_value] = []
+                ans[hash_value].append(j)
+        return ans
 
     def perform_lsh(self):
         """
@@ -91,8 +141,11 @@ class MinHashLSH:
         dict
             A dictionary mapping bucket IDs to lists of document indices.
         """
-        # TODO
-        return
+        num_bands = 25
+        signature = self.min_hash_signature()
+        
+        ans = self.lsh_buckets(signature, num_bands, self.num_hashes//num_bands)
+        return ans
 
     def jaccard_score(self, first_set, second_set):
         """
@@ -110,8 +163,9 @@ class MinHashLSH:
         float
             Jaccard score.
         """
-        # TODO
-        pass
+        intersection = len(first_set.intersection(second_set))
+        union = len(first_set.union(second_set))
+        return intersection/union
 
     def jaccard_similarity_test(self, buckets, all_documents):
         """
@@ -160,3 +214,47 @@ class MinHashLSH:
 
         # a good score is around 0.8
         print("your final score in near duplicate detection:", correct_near_duplicates / all_near_duplicates)
+
+
+
+def main():
+    a = MinHashLSH(None,None)
+    ans = a.shingle_document('i am not testing',2)
+    print(ans)
+
+
+    import json
+    json_file_path = '.\Logic\core\LSHFakeData.json'
+    with open(json_file_path, "r") as file:
+        data = json.load(file)
+    print('len is ', len(data))
+    docs = []
+    for i in data:
+        docs.append(' '.join(i['summaries']))
+
+    a = MinHashLSH(docs,100)
+    buckets = a.perform_lsh()
+    a.jaccard_similarity_test(buckets,docs)
+
+    ans = set()
+    for i in buckets:
+        if len(buckets[i])>1:
+            ans.add(tuple(buckets[i]))
+    print(ans,len(ans))
+    
+    json_file_path = "./IMDB_crawled.json"
+    with open(json_file_path, "r") as file:
+        data += json.load(file)
+    print('len is ', len(data))
+    docs = []
+    for i in data:
+        docs.append(' '.join(i['summaries']))
+    a = MinHashLSH(docs[0:20],100)
+    buckets = a.perform_lsh()
+    print('created')
+    a.jaccard_similarity_test(buckets,docs[0:20])
+    
+
+
+if __name__ == '__main__':
+    main()
