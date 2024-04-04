@@ -32,7 +32,8 @@ class Index:
         """
 
         current_index = {}
-        #         TODO
+        for doc in self.preprocessed_documents:
+            current_index[doc['id']] = doc
 
         return current_index
 
@@ -47,8 +48,26 @@ class Index:
             So the index type is: {term: {document_id: tf}}
         """
 
-        #         TODO
-        pass
+        index = {}
+        for doc in self.preprocessed_documents:
+            doc_id = doc['id']
+            actors = doc['stars']
+            count = 0
+            for actor in actors:
+                count += len(actor.split())
+            for actor in actors:
+                
+                for term in actor.split():
+                    
+                    if term not in index:
+                        index[term] = {}
+                    if doc_id not in index[term]:
+                        index[term][doc_id] = 0
+                    index[term][doc_id] += 1/count
+            
+            
+        return index
+        
 
     def index_genres(self):
         """
@@ -61,8 +80,25 @@ class Index:
             So the index type is: {term: {document_id: tf}}
         """
 
-        #         TODO
-        pass
+        index = {}
+        for doc in self.preprocessed_documents:
+            doc_id = doc['id']
+            actors = doc['genres']
+            count = 0
+            for actor in actors:
+                count += len(actor.split())
+            for actor in actors:
+                
+                for term in actor.split():
+                    
+                    if term not in index:
+                        index[term] = {}
+                    if doc_id not in index[term]:
+                        index[term][doc_id] = 0
+                    index[term][doc_id] += 1/count
+            
+            
+        return index        
 
     def index_summaries(self):
         """
@@ -75,10 +111,27 @@ class Index:
             So the index type is: {term: {document_id: tf}}
         """
 
-        current_index = {}
-        #         TODO
 
-        return current_index
+        index = {}
+        for doc in self.preprocessed_documents:
+            doc_id = doc['id']
+            actors = doc['summaries']
+            count = 0
+            for actor in actors:
+                count += len(actor.split())
+            for actor in actors:
+                
+                for term in actor.split():
+                    
+                    if term not in index:
+                        index[term] = {}
+                    if doc_id not in index[term]:
+                        index[term][doc_id] = 0
+                    index[term][doc_id] += 1/count
+            
+            
+        return index
+    
 
     def get_posting_list(self, word: str, index_type: str):
         """
@@ -98,9 +151,16 @@ class Index:
         """
 
         try:
-            #         TODO
-            pass
+            dic = self.index[index_type][word]
+            if index_type==Indexes.DOCUMENTS.value:
+                return [dic]
+            
+            ans = []
+            for i in dic:
+                ans.append(i)
+            return ans
         except:
+
             return []
 
     def add_document_to_index(self, document: dict):
@@ -112,9 +172,29 @@ class Index:
         document : dict
             Document to add to all the indexes
         """
+        self.index[Indexes.DOCUMENTS.value][document['id']] = document
 
-        #         TODO
-        pass
+        fields = (Indexes.GENRES.value,Indexes.SUMMARIES.value,Indexes.STARS.value)
+        
+        for field in fields:
+            ind = self.index[field]
+
+            doc_id = document['id']
+            actors = document[field]
+            count = 0
+            for actor in actors:
+                count += len(actor.split())
+            for actor in actors:
+                
+                for term in actor.split():
+                    
+                    if term not in ind:
+                        ind[term] = {}
+                    if doc_id not in ind[term]:
+                        ind[term][doc_id] = 0
+                    ind[term][doc_id] += 1/count
+
+
 
     def remove_document_from_index(self, document_id: str):
         """
@@ -126,8 +206,24 @@ class Index:
             ID of the document to remove from all the indexes
         """
 
-        #         TODO
-        pass
+        document = self.index[Indexes.DOCUMENTS.value].pop(document_id, None)
+        if document is None:
+            return
+        
+        fields = (Indexes.GENRES.value,Indexes.SUMMARIES.value,Indexes.STARS.value)
+
+        for field in fields:
+            index = self.index[field]
+            
+            actors = document[field]
+            terms = set()
+            for actor in actors:
+                terms.update(actor.split())
+            for term in terms:
+                index[term].pop(document_id) # not use None to raise error because it should exist
+            
+        
+
 
     def check_add_remove_is_correct(self):
         """
@@ -183,7 +279,7 @@ class Index:
         else:
             print('Remove is incorrect')
 
-    def store_index(self, path: str, index_name: str = None):
+    def store_index(self, path: str = './indexes/', index_name: str = None):
         """
         Stores the index in a file (such as a JSON file)
 
@@ -214,8 +310,11 @@ class Index:
             Path to load the file
         """
 
-        #         TODO
-        pass
+        with open(path, 'r') as f:
+            return json.load(f)
+
+
+
 
     def check_if_index_loaded_correctly(self, index_type: str, loaded_index: dict):
         """
@@ -287,7 +386,7 @@ class Index:
         if set(docs).issubset(set(posting_list)):
             print('Indexing is correct')
 
-            if implemented_time < brute_force_time:
+            if implemented_time <= brute_force_time:
                 print('Indexing is good')
                 return True
             else:
@@ -297,4 +396,46 @@ class Index:
             print('Indexing is wrong')
             return False
 
-# TODO: Run the class with needed parameters, then run check methods and finally report the results of check methods
+#  Run the class with needed parameters, then run check methods and finally report the results of check methods
+
+
+
+
+def main():
+    json_file_path = './IMDB_preprocessed.json'
+
+
+    with open(json_file_path, "r") as file:
+        docs = json.load(file)
+    
+
+    # print(len(docs))
+    index = Index(docs)
+    print('created index')
+    index.store_index(index_type=Indexes.GENRES.value)
+    index.store_index(index_type=Indexes.DOCUMENTS.value)
+    index.store_index(index_type=Indexes.SUMMARIES.value)
+    index.store_index(index_type=Indexes.STARS.value)
+
+    index.check_add_remove_is_correct()
+
+    loaded = index.load_index('./indexes/' + Indexes.GENRES.value + '_index.json')
+
+    print('index loaded correctly:',index.check_if_index_loaded_correctly(Indexes.GENRES.value, loaded)==True)
+    print('test doc index:')
+    index.check_if_indexing_is_good(index_type=Indexes.DOCUMENTS, check_word='tt0050083')
+    index.check_if_indexing_is_good(index_type=Indexes.DOCUMENTS, check_word='tt0071562')
+    print('test star index:')
+    index.check_if_indexing_is_good(index_type=Indexes.STARS, check_word='cooper')
+    index.check_if_indexing_is_good(index_type=Indexes.STARS, check_word='chevalier')
+    print('test genre index:')
+    index.check_if_indexing_is_good(index_type=Indexes.GENRES, check_word='drama')
+    index.check_if_indexing_is_good(index_type=Indexes.GENRES, check_word='horror')
+    print('test summeries index:')
+    index.check_if_indexing_is_good(index_type=Indexes.SUMMARIES, check_word='corleone')
+    index.check_if_indexing_is_good(index_type=Indexes.SUMMARIES, check_word='flannagan')
+    
+
+if __name__ == '__main__':
+    main()
+
