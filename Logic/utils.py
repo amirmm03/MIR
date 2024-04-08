@@ -1,11 +1,19 @@
 from typing import Dict, List
-from core.search import SearchEngine
-from core.spell_correction import SpellCorrection
-from core.snippet import Snippet
-from core.indexes_enum import Indexes, Index_types
+from .core.search import SearchEngine
+from .core.spell_correction import SpellCorrection
+from .core.snippet import Snippet
+from .core.indexer.indexes_enum import Indexes, Index_types
 import json
 
-movies_dataset = None  # TODO
+data_path = 'IMDB_preprocessed.json'
+with open(data_path, 'r') as f:
+    data = json.load(f)
+
+movies_dataset = {}
+for movie in data:
+    movies_dataset[movie['id']] = movie
+
+
 search_engine = SearchEngine()
 
 
@@ -61,7 +69,11 @@ def search(
     list
     Retrieved documents with snippet
     """
-    weights = ...  # TODO
+    weights = {
+        Indexes.STARS: weights[0],
+        Indexes.GENRES: weights[1],
+        Indexes.SUMMARIES: weights[2],
+    }
     return search_engine.search(
         query, method, weights, max_results=max_result_count, safe_ranking=True
     )

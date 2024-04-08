@@ -13,15 +13,22 @@ class Metadata_index:
             The path to the indexes.
         """
         
-        #TODO
+        self.read_documents(path)
+        self.metadata_index = self.create_metadata_index()
+        self.store_metadata_index(path)
 
-    def read_documents(self):
+    def read_documents(self,path):
         """
         Reads the documents.
         
         """
+        self.documents = Index_reader(path, index_name=Indexes.DOCUMENTS).index
+        self.document_length_index = {
+            Indexes.STARS.value: Index_reader(path, index_name=Indexes.STARS,index_type=Index_types.DOCUMENT_LENGTH).index,
+            Indexes.GENRES.value: Index_reader(path, index_name=Indexes.GENRES,index_type=Index_types.DOCUMENT_LENGTH).index,
+            Indexes.SUMMARIES.value: Index_reader(path, index_name=Indexes.SUMMARIES,index_type=Index_types.DOCUMENT_LENGTH).index,
+        }
 
-        #TODO
 
     def create_metadata_index(self):    
         """
@@ -46,8 +53,10 @@ class Metadata_index:
         where : str
             The field to get the document lengths for.
         """
-
-        #TODO
+        ans = 0
+        for id,count in self.document_length_index[where].items():
+            ans += count
+        return ans/len(self.document_length_index[where])
 
     def store_metadata_index(self, path):
         """
@@ -65,4 +74,4 @@ class Metadata_index:
 
     
 if __name__ == "__main__":
-    meta_index = Metadata_index()
+    meta_index = Metadata_index(path='indexes/')

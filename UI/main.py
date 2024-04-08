@@ -1,7 +1,12 @@
 import streamlit as st
 import sys
 
-sys.path.append("../")
+
+import os
+sys.path.insert(0, os.path.join(sys.path[0], '../..'))
+# sys.path.append('../')
+
+# print(sys.path)
 from Logic import utils
 import time
 from enum import Enum
@@ -50,8 +55,10 @@ def search_handling(
     search_weights,
     search_method,
 ):
+    correct_text = [' '.join(movie['summaries']) + ' '.join(movie['genres']) + ' '.join(movie['stars']) for id,movie in utils.movies_dataset.items()]
     if search_button:
-        corrected_query = utils.correct_text(search_term, utils.movies_dataset)
+        
+        corrected_query = utils.correct_text(search_term, correct_text)
 
         if corrected_query != search_term:
             st.warning(f"Your search terms were corrected to: {corrected_query}")
@@ -171,4 +178,5 @@ def main():
 
 
 if __name__ == "__main__":
+    # print('okkkkkkkkkkkk')
     main()
