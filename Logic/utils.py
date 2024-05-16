@@ -1,13 +1,20 @@
 from typing import Dict, List
 from .core.search import SearchEngine
-from .core.utility.spell_correction import SpellCorrection
-from .core.utility.snippet import Snippet
+from .core.spell_correction import SpellCorrection
+from .core.snippet import Snippet
 from .core.indexer.indexes_enum import Indexes, Index_types
 import json
 
-movies_dataset = None  # TODO: load your movies dataset (from the json file you saved your indexes in), here
-# You can refer to `get_movie_by_id` to see how this is used.
-# search_engine = SearchEngine()
+data_path = 'IMDB_preprocessed.json'
+with open(data_path, 'r') as f:
+    data = json.load(f)
+
+movies_dataset = {}
+for movie in data:
+    movies_dataset[movie['id']] = movie
+
+
+search_engine = SearchEngine()
 
 
 def correct_text(text: str, all_documents: List[str]) -> str:
@@ -67,11 +74,14 @@ def search(
     list
     Retrieved documents with snippet
     """
-    # weights = ...  # TODO
-    # return search_engine.search(
-    #     query, method, weights, max_results=max_result_count, safe_ranking=True
-    # )
-    return None
+    weights = {
+        Indexes.STARS: weights[0],
+        Indexes.GENRES: weights[1],
+        Indexes.SUMMARIES: weights[2],
+    }
+    return search_engine.search(
+        query, method, weights, max_results=max_result_count, safe_ranking=True
+    )
 
 
 def get_movie_by_id(id: str, movies_dataset: List[Dict[str, str]]) -> Dict[str, str]:

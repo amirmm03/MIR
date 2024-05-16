@@ -52,9 +52,9 @@ class Index:
         for doc in self.preprocessed_documents:
             doc_id = doc['id']
             actors = doc['stars']
-            count = 0
-            for actor in actors:
-                count += len(actor.split())
+            # count = 0
+            # for actor in actors:
+            #     count += len(actor.split())
             for actor in actors:
                 
                 for term in actor.split():
@@ -63,7 +63,7 @@ class Index:
                         index[term] = {}
                     if doc_id not in index[term]:
                         index[term][doc_id] = 0
-                    index[term][doc_id] += 1/count
+                    index[term][doc_id] += 1
             
             
         return index
@@ -84,9 +84,9 @@ class Index:
         for doc in self.preprocessed_documents:
             doc_id = doc['id']
             actors = doc['genres']
-            count = 0
-            for actor in actors:
-                count += len(actor.split())
+            # count = 0
+            # for actor in actors:
+            #     count += len(actor.split())
             for actor in actors:
                 
                 for term in actor.split():
@@ -95,7 +95,7 @@ class Index:
                         index[term] = {}
                     if doc_id not in index[term]:
                         index[term][doc_id] = 0
-                    index[term][doc_id] += 1/count
+                    index[term][doc_id] += 1
             
             
         return index        
@@ -116,9 +116,9 @@ class Index:
         for doc in self.preprocessed_documents:
             doc_id = doc['id']
             actors = doc['summaries']
-            count = 0
-            for actor in actors:
-                count += len(actor.split())
+            # count = 0
+            # for actor in actors:
+            #     count += len(actor.split())
             for actor in actors:
                 
                 for term in actor.split():
@@ -127,7 +127,7 @@ class Index:
                         index[term] = {}
                     if doc_id not in index[term]:
                         index[term][doc_id] = 0
-                    index[term][doc_id] += 1/count
+                    index[term][doc_id] += 1
             
             
         return index
@@ -296,9 +296,10 @@ class Index:
 
         if index_name not in self.index:
             raise ValueError('Invalid index name')
+        
 
-        # TODO
-        pass
+        with open(path + index_name + '_index.json', 'w') as f:
+            return f.write(json.dumps(self.index[index_name]))
 
     def load_index(self, path: str):
         """
@@ -409,13 +410,13 @@ def main():
         docs = json.load(file)
     
 
-    # print(len(docs))
+    print(len(docs))
     index = Index(docs)
     print('created index')
-    index.store_index(index_type=Indexes.GENRES.value)
-    index.store_index(index_type=Indexes.DOCUMENTS.value)
-    index.store_index(index_type=Indexes.SUMMARIES.value)
-    index.store_index(index_type=Indexes.STARS.value)
+    index.store_index(index_name=Indexes.GENRES.value)
+    index.store_index(index_name=Indexes.DOCUMENTS.value)
+    index.store_index(index_name=Indexes.SUMMARIES.value)
+    index.store_index(index_name=Indexes.STARS.value)
 
     index.check_add_remove_is_correct()
 

@@ -1,5 +1,5 @@
-from .indexes_enum import Indexes, Index_types
-from .index_reader import Index_reader
+from indexes_enum import Indexes, Index_types
+from index_reader import Index_reader
 import json
 
 
@@ -61,7 +61,24 @@ class Tiered_index:
         first_tier = {}
         second_tier = {}
         third_tier = {}
-        #TODO
+
+  
+        for term, id_tf_dict in current_index.items():
+
+            for id, tf in id_tf_dict.items():
+                if tf >= first_tier_threshold:
+                    if term not in first_tier:
+                        first_tier[term] = {}
+                    first_tier[term][id] = tf
+                elif tf >= second_tier_threshold:
+                    if term not in second_tier:
+                        second_tier[term] = {}
+                    second_tier[term][id] = tf
+                else:
+                    if term not in third_tier:
+                        third_tier[term] = {}
+                    third_tier[term][id] = tf
+
         return {
             "first_tier": first_tier,
             "second_tier": second_tier,
@@ -79,5 +96,5 @@ class Tiered_index:
 
 if __name__ == "__main__":
     tiered = Tiered_index(
-        path="index/"
+        path="indexes/"
     )

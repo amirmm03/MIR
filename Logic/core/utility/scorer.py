@@ -66,8 +66,17 @@ class Scorer:
         """
         idf = self.idf.get(term, None)
         if idf is None:
-            # TODO
-            pass
+            if term not in self.index:
+                idf = 0
+            else:
+                df = len(self.index[term])
+                if df == 0:
+                    idf = 0
+                else:
+                    idf = np.log2(self.N / df)
+
+            self.idf[term] = idf
+
         return idf
 
     def get_query_tfs(self, query):
@@ -84,8 +93,15 @@ class Scorer:
         dict
             A dictionary of the term frequencies of the terms in the query.
         """
+        
+        ans = {}
+        for term in query:
+            if term in ans:
+                ans[term] += 1
+            else:
+                ans[term] = 1
 
-        # TODO
+        return ans
 
     def compute_scores_with_vector_space_model(self, query, method):
         """
@@ -103,9 +119,15 @@ class Scorer:
         dict
             A dictionary of the document IDs and their scores.
         """
+        ans ={}
 
-        # TODO
-        pass
+        q_tf = self.get_query_tfs(query)
+        docs = self.get_list_of_documents(query)
+
+        for doc in docs:
+            ans[doc] = self.get_vector_space_model_score(query, q_tf, doc, method[:3], method[4:])
+        # print(ans)
+        return ans
 
     def get_vector_space_model_score(
         self, query, query_tfs, document_id, document_method, query_method
@@ -131,9 +153,54 @@ class Scorer:
         float
             The Vector Space Model score of the document for the query.
         """
+        query_w = []
+        doc_w = []
+        terms = list(set(query))
 
-        # TODO
-        pass
+        terms = [term for term in terms if term in self.index]
+
+        for term in terms:
+            
+            q_tf  = query_tfs[term]
+            if query_method[0] == 'l':
+                q_tf = 1 + np.log10(q_tf)
+            q_idf = 1
+            if query_method[1] == 't':
+                q_idf = self.get_idf(term)
+            query_w.append(q_idf*q_tf)
+
+            d_tf = self.index[term].get(document_id,0)
+            if document_method[0] == 'l':
+                if d_tf != 0:
+                    d_tf = 1 + np.log10(d_tf)
+            d_idf = 1
+            if document_method[1] == 't':
+                d_idf = self.get_idf(term)
+            doc_w.append(d_idf*d_tf)
+
+        
+
+
+        if query_method[2] == 'c':
+            
+            total = 0
+            for weight in query_w:
+                total += weight ** 2
+            query_normalization = np.sqrt(total)
+            query_w = [weight / query_normalization for weight in query_w]
+        
+        
+        if document_method[2] == 'c':
+            
+            total = 0
+            for weight in doc_w:
+                total += weight ** 2
+            doc_normalization = np.sqrt(total)
+            if doc_normalization !=0:
+                doc_w = [weight / doc_normalization for weight in doc_w]
+
+        final_score = sum([doc_weight * query_weight for (query_weight, doc_weight) in zip(query_w, doc_w)])
+        return final_score
 
     def compute_socres_with_okapi_bm25(
         self, query, average_document_field_length, document_lengths
@@ -157,8 +224,11 @@ class Scorer:
             A dictionary of the document IDs and their scores.
         """
 
-        # TODO
-        pass
+        documents = self.get_list_of_documents(query)
+        ans = {}
+        for document in documents:
+            ans[document] = self.get_okapi_bm25_score(query, document, average_document_field_length, document_lengths)
+        return ans
 
     def get_okapi_bm25_score(
         self, query, document_id, average_document_field_length, document_lengths
@@ -183,9 +253,23 @@ class Scorer:
         float
             The Okapi BM25 score of the document for the query.
         """
+        terms = list(set(query))
+        terms = [term for term in terms if term in self.index]
+        ans = 0
+        k = 2
+        b = 0.75
 
-        # TODO
-        pass
+        for term in terms:
+            tf = self.index[term].get(document_id,0)
+            idf = self.get_idf(term)
+            document_length = document_lengths[document_id]
+
+            other = ((k + 1) * tf) / (k * ((1 - b) + b * (document_length / average_document_field_length)) + tf)
+            score = idf * other
+            ans += score
+
+        return ans
+
 
     def compute_scores_with_unigram_model(
         self, query, smoothing_method, document_lengths=None, alpha=0.5, lamda=0.5
@@ -248,3 +332,4 @@ class Scorer:
 
         # TODO
         pass
+

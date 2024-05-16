@@ -2,6 +2,8 @@ import json
 import numpy as np
 from .utility import Preprocessor, Scorer
 from .indexer import Indexes, Index_types, Index_reader
+from .indexer.indexes_enum import Indexes, Index_types
+from .indexer.index_reader import Index_reader
 
 
 class SearchEngine:
@@ -10,11 +12,12 @@ class SearchEngine:
         Initializes the search engine.
 
         """
-        path = "/index"
+        path = './indexes/'
         self.document_indexes = {
             Indexes.STARS: Index_reader(path, Indexes.STARS),
             Indexes.GENRES: Index_reader(path, Indexes.GENRES),
             Indexes.SUMMARIES: Index_reader(path, Indexes.SUMMARIES),
+            Indexes.DOCUMENTS: Index_reader(path, Indexes.DOCUMENTS).index
         }
         self.tiered_index = {
             Indexes.STARS: Index_reader(path, Indexes.STARS, Index_types.TIERED),
@@ -116,8 +119,11 @@ class SearchEngine:
         final_scores : dict
             The final scores of the documents.
         """
-        # TODO
-        pass
+        for field in weights:
+            for doc, score in scores[field].items():
+                if doc not in final_scores:
+                    final_scores[doc] = 0
+                final_scores[doc] += score * weights[field]
 
     def find_scores_with_unsafe_ranking(
         self, query, method, weights, max_results, scores
@@ -139,9 +145,27 @@ class SearchEngine:
             The scores of the documents.
         """
         for field in weights:
+            # print('field:',field)
+            scores[field] = {}
             for tier in ["first_tier", "second_tier", "third_tier"]:
-                # TODO
-                pass
+                
+                scorer = Scorer(self.tiered_index[field].index[tier], self.metadata_index.index['document_count'])
+
+                if method == 'OkapiBM25':
+                    document_length_index = self.document_lengths_index[field].index
+                    # print(self.metadata_index.index)
+                    average_length = self.metadata_index.index['averge_document_length'][field.value]
+                    ans = scorer.compute_socres_with_okapi_bm25(query, average_length, document_length_index)
+                else:
+                    ans = scorer.compute_scores_with_vector_space_model(query, method)
+
+                scores[field] = self.merge_scores(scores[field],ans)
+                
+                if len(scores[field])>=max_results:
+                    # print('tier is',tier)
+                    break
+
+            # scores[field] = ans
 
     def find_scores_with_safe_ranking(self, query, method, weights, scores):
         """
@@ -160,8 +184,17 @@ class SearchEngine:
         """
 
         for field in weights:
-            # TODO
-            pass
+            
+            scorer = Scorer(self.document_indexes[field].index, self.metadata_index.index['document_count'])
+
+            if method == 'OkapiBM25':
+                document_length_index = self.document_lengths_index[field].index
+                average_length = self.metadata_index.index['averge_document_length'][field.value]
+                ans = scorer.compute_socres_with_okapi_bm25(query, average_length, document_length_index)
+            else:
+                ans = scorer.compute_scores_with_vector_space_model(query, method)
+
+            scores[field] = ans
 
     def find_scores_with_unigram_model(
         self, query, smoothing_method, weights, scores, alpha=0.5, lamda=0.5
@@ -205,14 +238,33 @@ class SearchEngine:
             The merged dictionary of scores.
         """
 
-        # TODO
+        ans = {}
+        for doc, score in scores1.items():
+            if doc not in ans:
+                ans[doc] = 0
+            ans[doc] += score
+        for doc, score in scores2.items():
+            if doc not in ans:
+                ans[doc] = 0
+            ans[doc] += score
+    
+        return ans
+
 
 
 if __name__ == "__main__":
     search_engine = SearchEngine()
-    query = "spider man in wonderland"
+    query = "spider-man in wonderland"
     method = "lnc.ltc"
-    weights = {Indexes.STARS: 1, Indexes.GENRES: 1, Indexes.SUMMARIES: 1}
-    result = search_engine.search(query, method, weights)
+    # method = 'OkapiBM25'
+    weights = {
+        Indexes.STARS: 1,
+        Indexes.GENRES: 1,
+        Indexes.SUMMARIES: 1
+    }
 
-    print(result)
+    result = search_engine.search(query, method, weights,False)
+
+    for doc in result:
+       print( search_engine.document_indexes[Indexes.DOCUMENTS][doc[0]]['title'])
+    # print(result)

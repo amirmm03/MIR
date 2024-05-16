@@ -1,7 +1,12 @@
 import streamlit as st
 import sys
 
-sys.path.append("../")
+
+import os
+sys.path.insert(0, os.path.join(sys.path[0], '../..'))
+# sys.path.append('../')
+
+# print(sys.path)
 from Logic import utils
 import time
 from enum import Enum
@@ -301,4 +306,5 @@ def main():
 
 
 if __name__ == "__main__":
+    # print('okkkkkkkkkkkk')
     main()
