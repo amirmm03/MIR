@@ -82,7 +82,7 @@ class SearchEngine:
             A list of tuples containing the document IDs and their scores sorted by their scores.
         """
         preprocessor = Preprocessor([query])
-        query = preprocessor.preprocess()[0]
+        query = preprocessor.preprocess()[0].split()
 
         scores = {}
         if method == "unigram":
@@ -218,8 +218,11 @@ class SearchEngine:
             The parameter used in some smoothing methods to balance between the document
             probability and the collection probability. Defaults to 0.5.
         """
-        # TODO
-        pass
+        for field in weights:
+            doc_len_ind = self.document_lengths_index[field].index
+            scorer = Scorer(self.document_indexes[field].index, self.metadata_index.index['document_count'])
+            ans = scorer.compute_scores_with_unigram_model(query, smoothing_method,doc_len_ind,alpha,lamda)
+            scores[field] = ans
 
     def merge_scores(self, scores1, scores2):
         """

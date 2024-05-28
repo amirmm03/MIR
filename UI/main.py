@@ -135,7 +135,7 @@ def search_handling(
         return
 
     if search_button:
-        corrected_query = utils.correct_text(search_term, utils.all_documents)
+        corrected_query = utils.correct_text(search_term, utils.movies_dataset)
 
         if corrected_query != search_term:
             st.warning(f"Your search terms were corrected to: {corrected_query}")

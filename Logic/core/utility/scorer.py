@@ -297,9 +297,12 @@ class Scorer:
         float
             A dictionary of the document IDs and their scores.
         """
+        documents = self.get_list_of_documents(query)
+        ans = {}
+        for document in documents:
+            ans[document] = self.compute_score_with_unigram_model(query, document,smoothing_method,document_lengths,alpha,lamda)
+        return ans
 
-        # TODO
-        pass
 
     def compute_score_with_unigram_model(
         self, query, document_id, smoothing_method, document_lengths, alpha, lamda
@@ -329,7 +332,33 @@ class Scorer:
         float
             The Unigram score of the document for the query.
         """
+        terms = query
+        terms = [term for term in terms if term in self.index]
+        ans = 0
+        doc_length = document_lengths[document_id]
+        all_doc_length = sum(document_lengths.values())
+        for term in terms:
+            
+            tf = self.index[term].get(document_id,0)
+            
+            cf = sum(self.index[term].get(doc,0) for doc in self.index[term])
 
-        # TODO
-        pass
+            
+            p_td = tf / doc_length
+            p_tc = cf / all_doc_length
+
+
+            if smoothing_method == 'bayes':
+                pb = (tf + alpha*(p_tc)) / (doc_length + alpha)
+            elif smoothing_method == 'naive':
+                pb = (tf + 1) / (doc_length + len(self.index))
+            elif smoothing_method == 'mixture':
+                pb = lamda * p_td + (1 - lamda) * p_tc
+            else:
+                raise ValueError(f"smoothing method {smoothing_method} not exists")
+            
+
+            ans += np.log(pb)
+
+        return ans
 

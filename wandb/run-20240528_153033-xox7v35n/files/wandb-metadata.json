@@ -1,0 +1,53 @@
+{
+    "os": "Windows-10-10.0.19045-SP0",
+    "python": "3.12.2",
+    "heartbeatAt": "2024-05-28T11:00:36.482381",
+    "startedAt": "2024-05-28T11:00:33.868659",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "c:\\Users\\mopana\\Desktop\\term6\\mir\\pr\\mir\\Logic\\core\\clustering\\main.py",
+    "codePathLocal": "Logic\\core\\clustering\\main.py",
+    "codePath": "Logic\\core\\clustering\\main.py",
+    "git": {
+        "remote": "https://github.com/amirmm03/mir.git",
+        "commit": "954d255efe7c551e5c252d7716099ba34498c2be"
+    },
+    "email": "amirmm71382@gmail.com",
+    "root": "C:/Users/mopana/Desktop/term6/mir/pr/mir",
+    "host": "DESKTOP-NF70UM6",
+    "username": "mopana",
+    "executable": "C:\\Users\\mopana\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "cpu_count": 4,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 2394.0,
+        "min": 0.0,
+        "max": 2394.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2394.0,
+            "min": 0.0,
+            "max": 2394.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 200.12753677368164,
+            "used": 165.30854415893555
+        }
+    },
+    "gpu": "GeForce 840M",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "GeForce 840M",
+            "memory_total": 4294967296
+        }
+    ],
+    "memory": {
+        "total": 7.885871887207031
+    }
+}

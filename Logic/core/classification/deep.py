@@ -58,7 +58,6 @@ class DeepModelClassifier(BasicClassifier):
         batch_size: int
             The batch size of dataloader
         """
-        super().__init__()
         self.test_loader = None
         self.in_features = in_features
         self.num_classes = num_classes
@@ -68,10 +67,7 @@ class DeepModelClassifier(BasicClassifier):
         self.best_model = self.model.state_dict()
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
-        self.device = 'mps' if torch.backends.mps.is_available else 'cpu'
-        self.device = 'cuda' if torch.cuda.is_available() else self.device
-        self.model.to(self.device)
-        print(f"Using device: {self.device}")
+
 
     def fit(self, x, y):
         """
@@ -87,6 +83,22 @@ class DeepModelClassifier(BasicClassifier):
         -------
         self
         """
+        train_dataset = ReviewDataSet(x, y)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        best = 0
+        for epoch in range(self.num_epochs):
+            self.model.train()
+            for xb, yb in tqdm(train_loader, desc=f"epoch {epoch + 1}", leave=False):
+                self.optimizer.zero_grad()
+                output = self.model(xb)
+                loss = self.criterion(output, yb)
+                loss.backward()
+                self.optimizer.step()
+
+            _, _, _, f1_score_macro = self._eval_epoch(self.test_loader, self.model)
+            if f1_score_macro > best:
+                best = f1_score_macro
+                self.best_model = self.model.state_dict()
         return self
 
     def predict(self, x):
@@ -101,7 +113,16 @@ class DeepModelClassifier(BasicClassifier):
         predicted_labels: list
             The predicted labels
         """
-        pass
+        self.model.load_state_dict(self.best_model)
+        self.model.eval()
+        test_dataset = ReviewDataSet(x, np.zeros(len(x)))
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+        predicted_labels = []
+        for xb, _ in test_loader:
+            output = self.model(xb)
+            _, predicted = torch.max(output, 1)
+            predicted_labels.extend(predicted.cpu().numpy())
+        return predicted_labels
 
     def _eval_epoch(self, dataloader: torch.utils.data.DataLoader, model):
         """
@@ -120,7 +141,20 @@ class DeepModelClassifier(BasicClassifier):
         f1_score_macro: float
             The f1 score on the given dataloader
         """
-        pass
+        model.eval()
+        eval_loss = 0
+        predicted_labels = []
+        true_labels = []
+        with torch.no_grad():
+            for xb, yb in dataloader:
+                output = model(xb)
+                loss = self.criterion(output, yb)
+                eval_loss += loss.item()
+                _, predicted = torch.max(output, 1)
+                predicted_labels.extend(predicted.cpu().numpy())
+                true_labels.extend(yb.cpu().numpy())
+        f1_score_macro = f1_score(true_labels, predicted_labels, average='macro')
+        return eval_loss, predicted_labels, true_labels, f1_score_macro
 
     def set_test_dataloader(self, X_test, y_test):
         """
@@ -136,7 +170,8 @@ class DeepModelClassifier(BasicClassifier):
         self
             Returns self
         """
-        pass
+        test_dataset = ReviewDataSet(X_test, y_test)
+        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
 
     def prediction_report(self, x, y):
         """
@@ -152,11 +187,46 @@ class DeepModelClassifier(BasicClassifier):
         str
             The classification report
         """
-        pass
+        y_pred = self.predict(x)
+        return classification_report(y, y_pred)
 
 # F1 Accuracy : 79%
 if __name__ == '__main__':
     """
     Fit the model with the training data and predict the test data, then print the classification report
     """
-    pass
+    r = ReviewLoader('IMDB Dataset.csv')
+    r.load_data()
+    r.get_embeddings()
+
+    # print(x[0])
+    x_train, x_test, y_train, y_test = r.split_data(test_data_ratio=0.2)
+    for i,y in enumerate(y_train):
+        if y == -1:
+            y_train[i] = 0
+    for i,y in enumerate(y_test):
+        if y == -1:
+            y_test[i] = 0
+    x_valid = x_test[0:len(x_test)//2]
+    x_test = x_test[len(x_test)//2:]
+
+    y_valid = y_test[0:len(y_test)//2]
+    y_test = y_test[len(y_test)//2:]
+
+
+    model = DeepModelClassifier(in_features=100, num_classes=2, batch_size=64, num_epochs=50)
+    model.set_test_dataloader(x_valid, y_valid)
+    print('fiting')
+    model.fit(x_train, y_train)
+    model.set_test_dataloader(x_test, y_test)
+    print('predicting')
+    print(model.prediction_report(x_test, y_test))
+# with 1/5 of data:
+#               precision    recall  f1-score   support
+
+#            0       0.81      0.73      0.76       493
+#            1       0.76      0.83      0.79       507
+
+#     accuracy                           0.78      1000
+#    macro avg       0.78      0.78      0.78      1000
+# weighted avg       0.78      0.78      0.78      1000

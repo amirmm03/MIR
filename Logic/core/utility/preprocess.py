@@ -15,7 +15,7 @@ class Preprocessor:
         """
         self.documents = documents
 
-        path = './Logic/core/stopwords.txt'
+        path = './Logic/core/utility/stopwords.txt'
         with open(path, "r") as file:
             self.stopwords = file.readlines()
         for i in range(len(self.stopwords)):

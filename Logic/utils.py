@@ -1,7 +1,7 @@
 from typing import Dict, List
 from .core.search import SearchEngine
-from .core.spell_correction import SpellCorrection
-from .core.snippet import Snippet
+from .core.utility.spell_correction import SpellCorrection
+from .core.utility.snippet import Snippet
 from .core.indexer.indexes_enum import Indexes, Index_types
 import json
 
@@ -45,6 +45,9 @@ def search(
     weights: list = [0.3, 0.3, 0.4],
     should_print=False,
     preferred_genre: str = None,
+    unigram_smoothing=None,
+    alpha=None,
+    lamda=None,
 ):
     """
     Finds relevant documents to query
@@ -80,7 +83,7 @@ def search(
         Indexes.SUMMARIES: weights[2],
     }
     return search_engine.search(
-        query, method, weights, max_results=max_result_count, safe_ranking=True
+        query, method, weights, max_results=max_result_count, safe_ranking=True, lamda=lamda,alpha=alpha, smoothing_method=unigram_smoothing
     )
 
 
@@ -120,4 +123,11 @@ def get_movie_by_id(id: str, movies_dataset: List[Dict[str, str]]) -> Dict[str, 
     #     f"https://www.imdb.com/title/{result['id']}"  # The url pattern of IMDb movies
     # )
     # return result
-    return None
+    ans = movies_dataset[id]
+    ans['URL'] = (
+        f"https://www.imdb.com/title/{ans['id']}"  
+    )
+    ans["Image_URL"] = (
+        "https://m.media-amazon.com/images/M/MV5BNDE3ODcxYzMtY2YzZC00NmNlLWJiNDMtZDViZWM2MzIxZDYwXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_.jpg"  # a default picture for selected movies
+    )
+    return ans

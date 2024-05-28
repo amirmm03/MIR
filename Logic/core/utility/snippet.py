@@ -10,7 +10,7 @@ class Snippet:
         """
         self.number_of_words_on_each_side = number_of_words_on_each_side
 
-        path = './Logic/core/stopwords.txt'
+        path = './Logic/core/utility/stopwords.txt'
         with open(path, "r") as file:
             self.stopwords = file.readlines()
         for i in range(len(self.stopwords)):
