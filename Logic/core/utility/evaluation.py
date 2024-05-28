@@ -356,12 +356,6 @@ class Evaluation:
         self.log_evaluation(precision, recall, f1, ap, map_score, dcg, ndcg, rr, mrr)
 
 
-<<<<<<< HEAD
 if __name__ == '__main__':
     eval = Evaluation('test')
     eval.calculate_evaluation([['batman','the batman']],[['dark knight','batman']])
-=======
-
-eval = Evaluation('test')
-eval.calculate_evaluation([['batman','the batman']],[['dark knight','batman']])
->>>>>>> 4ab1921 (add evaluation)
