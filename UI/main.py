@@ -5,8 +5,8 @@ import sys
 import os
 sys.path.insert(0, os.path.join(sys.path[0], '../..'))
 # sys.path.append('../')
-print('#'*30)
-print(os.getcwd())
+# print('#'*30)
+# print(os.getcwd())
 from Logic import utils
 import time
 from enum import Enum
@@ -177,6 +177,8 @@ def search_handling(
                             f"<b>Summary:</b> {get_summary_with_snippet(info, search_term)}",
                             unsafe_allow_html=True,
                         )
+                        
+
                         st.markdown("**Directors:**")
                         for director in info["directors"]:
                             st.markdown(f"- {director}")
@@ -186,11 +188,35 @@ def search_handling(
                             st.markdown(f"- {star}")
 
                         st.markdown("**Genres:**")
+                        string = ''
                         for genre in info["genres"]:
-                            st.markdown(
-                                f"<span style='color:{random.choice(list(color)).value}'>{genre}</span>",
-                                unsafe_allow_html=True,
-                            )
+                            string += f"   <span style='color: rgb(125, 12, 173);margin-right: 15px;'>{genre.upper()}   </span>"
+                        st.markdown(
+                            string,
+                            unsafe_allow_html=True,
+                        )
+
+                        st.markdown("**Related movies:**")
+
+                        string = '<div style="display: flex; margin-right: 30px; ">'
+                        for movie in info["related_links"][:5]:
+                            parts = movie.split('/')
+                            for part in parts:
+                                if part.startswith('tt'):
+                                    related_id = part
+                            try:
+                                string += f'<a style="margin-right: 15px; text-decoration: none; color: rgb(125, 12, 173);" href="{movie}">{utils.get_movie_by_id(related_id, utils.movies_dataset)["title"]}</a> '
+                            except:
+                                pass
+                            
+    
+                        string +=  '</div>'
+                        
+                        st.markdown(string,unsafe_allow_html=True)
+
+
+
+
                     with col2:
                         st.image(info["Image_URL"], use_column_width=True)
                     st.markdown("---")
@@ -330,7 +356,7 @@ def main():
 
     search_term = st.text_input("Search Term")
     with st.expander("Advanced Options"):
-        search_max_num = st.number_input("Maximum number of results", min_value=5, max_value=100, value=10, step=5)
+        search_max_num = st.number_input("Maximum number of results", min_value=5, max_value=100, value=5, step=5)
         weight_stars = st.slider("Weight of stars in search", min_value=0.0, max_value=1.0, value=1.0, step=0.1)
         weight_genres = st.slider("Weight of genres in search", min_value=0.0, max_value=1.0, value=1.0, step=0.1)
         weight_summary = st.slider("Weight of summary in search", min_value=0.0, max_value=1.0, value=1.0, step=0.1)
