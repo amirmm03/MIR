@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join('Logic', 'core')))
-from word_embedding.fasttext_model import FastText
+from Logic.core.word_embedding.fasttext_model import FastText
 
 
 class ReviewLoader:
